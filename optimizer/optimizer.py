@@ -16,7 +16,7 @@ import psycopg2
 import redis
 
 KAFKA = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://byufuel:byufuel123@postgres:5432/byufuel")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://greenlantern:greenlantern123@postgres:5432/greenlantern")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 
 # Vehicle capacities

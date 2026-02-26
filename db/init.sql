@@ -1,12 +1,76 @@
--- BYUFUEL Database Schema
+-- GREEN LANTERN Database Schema
 -- ========================
+-- Integrated with real byufuel_app data
 
--- Vehicles fleet
+-- Users table for authentication (from real schema)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Warehouses (from real schema)
+CREATE TABLE IF NOT EXISTS warehouses (
+    id VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    state VARCHAR(100),
+    rent_type VARCHAR(50) DEFAULT 'WH Rent',
+    address TEXT,
+    lat DOUBLE PRECISION NOT NULL,
+    lng DOUBLE PRECISION NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_warehouses_user_id ON warehouses(user_id);
+
+-- Restaurants (from real schema)
+CREATE TABLE IF NOT EXISTS restaurants (
+    id VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    area VARCHAR(255),
+    city VARCHAR(100),
+    pincode INTEGER,
+    lat DOUBLE PRECISION NOT NULL,
+    lng DOUBLE PRECISION NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    uco_pickup_history INTEGER[] DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_restaurants_user_id ON restaurants(user_id);
+
+-- Fleets (from real schema) - source for vehicles
+CREATE TABLE IF NOT EXISTS fleets (
+    id SERIAL PRIMARY KEY,
+    vehicle VARCHAR(255) NOT NULL,
+    vehicle_type VARCHAR(100) NOT NULL,
+    count INTEGER NOT NULL DEFAULT 1,
+    capacity DECIMAL(10, 2),
+    fuel_type VARCHAR(50),
+    warehouse_id VARCHAR(20) REFERENCES warehouses(id) ON DELETE SET NULL,
+    available INTEGER NOT NULL DEFAULT 0,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT available_check CHECK (available <= count)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fleets_user_id ON fleets(user_id);
+CREATE INDEX IF NOT EXISTS idx_fleets_warehouse_id ON fleets(warehouse_id);
+
+-- Vehicles fleet (Green Lantern tracking)
 CREATE TABLE IF NOT EXISTS vehicles (
     id VARCHAR(20) PRIMARY KEY,
     type VARCHAR(50) NOT NULL DEFAULT 'truck',
     capacity_kg FLOAT NOT NULL DEFAULT 500.0,
-    fuel_type VARCHAR(20) NOT NULL DEFAULT 'diesel'
+    fuel_type VARCHAR(20) NOT NULL DEFAULT 'diesel',
+    fleet_id INTEGER REFERENCES fleets(id) ON DELETE SET NULL
 );
 
 -- Latest vehicle state
@@ -19,29 +83,13 @@ CREATE TABLE IF NOT EXISTS vehicle_state (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Warehouses
-CREATE TABLE IF NOT EXISTS warehouses (
-    id VARCHAR(20) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    lat DOUBLE PRECISION NOT NULL,
-    lng DOUBLE PRECISION NOT NULL
-);
-
--- Restaurants
-CREATE TABLE IF NOT EXISTS restaurants (
-    id VARCHAR(20) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    lat DOUBLE PRECISION NOT NULL,
-    lng DOUBLE PRECISION NOT NULL
-);
-
 -- Pickup requests
 CREATE TABLE IF NOT EXISTS pickups (
     id VARCHAR(50) PRIMARY KEY,
-    restaurant_id VARCHAR(20),
+    restaurant_id VARCHAR(20) REFERENCES restaurants(id),
     requested_load_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
-    assigned_vehicle VARCHAR(20),
+    assigned_vehicle VARCHAR(20) REFERENCES vehicles(id),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -73,41 +121,6 @@ CREATE TABLE IF NOT EXISTS emissions (
 );
 
 -- ========================
--- SEED DATA
+-- NOTE: Real data will be loaded via migrate_real_data.sql
+-- Run that script after this initialization
 -- ========================
-
--- 3 Vehicles
-INSERT INTO vehicles (id, type, capacity_kg, fuel_type) VALUES
-    ('V001', 'truck', 500.0, 'diesel'),
-    ('V002', 'van', 300.0, 'cng'),
-    ('V003', 'truck', 600.0, 'diesel')
-ON CONFLICT (id) DO NOTHING;
-
--- Initial vehicle states (Delhi area)
-INSERT INTO vehicle_state (vehicle_id, lat, lng, speed, load_kg) VALUES
-    ('V001', 28.6139, 77.2090, 0, 0),
-    ('V002', 28.6280, 77.2190, 0, 0),
-    ('V003', 28.6350, 77.2250, 0, 0)
-ON CONFLICT (vehicle_id) DO NOTHING;
-
--- 2 Warehouses
-INSERT INTO warehouses (id, name, lat, lng) VALUES
-    ('W001', 'Central Warehouse', 28.6139, 77.2090),
-    ('W002', 'South Warehouse', 28.5500, 77.2500)
-ON CONFLICT (id) DO NOTHING;
-
--- 5 Restaurants
-INSERT INTO restaurants (id, name, lat, lng) VALUES
-    ('R001', 'Spice Garden', 28.6300, 77.2200),
-    ('R002', 'Delhi Darbar', 28.6450, 77.2100),
-    ('R003', 'Tandoori Nights', 28.6200, 77.2350),
-    ('R004', 'Green Leaf Cafe', 28.6100, 77.2400),
-    ('R005', 'Royal Kitchen', 28.6500, 77.2300)
-ON CONFLICT (id) DO NOTHING;
-
--- Initial routes (simple polylines around Delhi)
-INSERT INTO routes (vehicle_id, polyline_json) VALUES
-    ('V001', '[[28.6139,77.2090],[28.6200,77.2150],[28.6300,77.2200],[28.6350,77.2250]]'),
-    ('V002', '[[28.6280,77.2190],[28.6350,77.2250],[28.6450,77.2100],[28.6500,77.2300]]'),
-    ('V003', '[[28.6350,77.2250],[28.6200,77.2350],[28.6100,77.2400],[28.6139,77.2090]]')
-ON CONFLICT (vehicle_id) DO NOTHING;

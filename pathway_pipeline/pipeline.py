@@ -1,5 +1,5 @@
 """
-BYUFUEL – Pathway Streaming Pipeline
+GREEN LANTERN – Pathway Streaming Pipeline
 ======================================
 Built on the Pathway real-time data processing framework.
 Uses pw.io.kafka connectors, pw.Schema, pw.udf, and Pathway's
@@ -42,7 +42,7 @@ import redis as redis_lib
 # ═══════════════════════════════════════════════════════════
 
 KAFKA_BROKER = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://byufuel:byufuel123@postgres:5432/byufuel")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://greenlantern:greenlantern123@postgres:5432/greenlantern")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 
 # Thresholds
@@ -55,7 +55,7 @@ CO2_BASE_RATE = 2.3           # kg CO₂ per km (diesel truck baseline)
 # Kafka rdkafka settings (librdkafka format used by Pathway)
 rdkafka_settings = {
     "bootstrap.servers": KAFKA_BROKER,
-    "group.id": "pathway-byufuel-pipeline",
+    "group.id": "pathway-greenlantern-pipeline",
     "session.timeout.ms": "6000",
     "auto.offset.reset": "latest",
 }
@@ -501,7 +501,7 @@ def route_update_listener():
 
 def main():
     print("=" * 60)
-    print(" BYUFUEL — Pathway Streaming Pipeline")
+    print(" GREEN LANTERN — Pathway Streaming Pipeline")
     print("=" * 60)
     time.sleep(10)  # Wait for Kafka, DB, Redis
 

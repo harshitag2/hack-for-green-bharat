@@ -1,6 +1,7 @@
 import React from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
+import VoronoiLayer from './VoronoiLayer'
 
 const ROUTE_COLORS = {
     V001: '#3b82f6',
@@ -34,6 +35,24 @@ function RoutesView({ vehicles, routes, warehouses, restaurants, selectedVehicle
 
     const selectedRoute = routes.find(r => r.vehicle_id === selectedVehicle)
 
+    // Helper function to find location name from coordinates
+    const getLocationName = (lat, lng) => {
+        // Check warehouses with more lenient tolerance
+        const warehouse = warehouses.find(w => 
+            Math.abs(w.lat - lat) < 0.01 && Math.abs(w.lng - lng) < 0.01
+        )
+        if (warehouse) return warehouse.name
+
+        // Check restaurants with more lenient tolerance
+        const restaurant = restaurants.find(r => 
+            Math.abs(r.lat - lat) < 0.01 && Math.abs(r.lng - lng) < 0.01
+        )
+        if (restaurant) return restaurant.name
+
+        // Default to "Unknown Location"
+        return 'Unknown Location'
+    }
+
     return (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px', minHeight: '500px' }}>
             <div className="card">
@@ -42,7 +61,10 @@ function RoutesView({ vehicles, routes, warehouses, restaurants, selectedVehicle
                     <select
                         className="routes-select"
                         value={selectedVehicle || ''}
-                        onChange={(e) => onSelectVehicle(e.target.value || null)}
+                        onChange={(e) => {
+                            const value = e.target.value
+                            onSelectVehicle(value === '' ? null : value)
+                        }}
                     >
                         <option value="">All Vehicles</option>
                         {vehicles.map(v => (
@@ -54,8 +76,11 @@ function RoutesView({ vehicles, routes, warehouses, restaurants, selectedVehicle
                     <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
                         <TileLayer
                             attribution='&copy; CARTO'
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                         />
+
+                        {/* Voronoi diagram for warehouse service areas */}
+                        <VoronoiLayer warehouses={warehouses} restaurants={restaurants} />
 
                         {/* Route polylines */}
                         {routes
@@ -76,9 +101,24 @@ function RoutesView({ vehicles, routes, warehouses, restaurants, selectedVehicle
                             .filter(v => !selectedVehicle || v.id === selectedVehicle)
                             .map(v => (
                                 <Marker key={v.id} position={[v.lat, v.lng]} icon={vehicleIcon(v.id)}>
-                                    <Popup>
-                                        <strong>{v.id}</strong> — {v.speed?.toFixed(1)} km/h
-                                    </Popup>
+                                    <Tooltip direction="top" offset={[0, -16]} opacity={0.95}>
+                                        <div style={{ fontFamily: 'Inter, sans-serif', minWidth: '200px' }}>
+                                            <strong style={{ fontSize: '13px' }}>{v.id}</strong>
+                                            <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '6px 0' }} />
+                                            <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.8 }}>
+                                                🏎️ Speed: <strong>{v.speed?.toFixed(1)} km/h</strong><br />
+                                                📊 Capacity Utilization: <strong>{v.capacity_pct?.toFixed(1)}%</strong><br />
+                                                📍 <a 
+                                                    href={`https://www.google.com/maps?q=${v.lat},${v.lng}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}
+                                                >
+                                                    View on Google Maps
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </Tooltip>
                                 </Marker>
                             ))}
                     </MapContainer>
@@ -106,25 +146,33 @@ function RoutesView({ vehicles, routes, warehouses, restaurants, selectedVehicle
                                 <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '8px' }}>
                                     Waypoints ({selectedRoute.polyline.length})
                                 </div>
-                                {selectedRoute.polyline.map((point, idx) => (
-                                    <div key={idx} style={{
-                                        display: 'flex', alignItems: 'center', gap: '8px',
-                                        padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                        fontSize: '12px',
-                                    }}>
-                                        <span style={{
-                                            width: '20px', height: '20px', borderRadius: '50%',
-                                            background: idx === 0 ? '#10b981' : idx === selectedRoute.polyline.length - 1 ? '#ef4444' : '#3b82f6',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '10px', color: 'white', fontWeight: 700, flexShrink: 0,
+                                {selectedRoute.polyline.map((point, idx) => {
+                                    const locationName = getLocationName(point[0], point[1])
+                                    return (
+                                        <div key={idx} style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '8px 0', borderBottom: '1px solid #e2e8f0',
+                                            fontSize: '12px',
                                         }}>
-                                            {idx + 1}
-                                        </span>
-                                        <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>
-                                            {point[0].toFixed(4)}, {point[1].toFixed(4)}
-                                        </span>
-                                    </div>
-                                ))}
+                                            <span style={{
+                                                width: '22px', height: '22px', borderRadius: '50%',
+                                                background: idx === 0 ? '#10b981' : idx === selectedRoute.polyline.length - 1 ? '#ef4444' : '#3b82f6',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '10px', color: 'white', fontWeight: 700, flexShrink: 0,
+                                            }}>
+                                                {idx + 1}
+                                            </span>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '2px' }}>
+                                                    {locationName}
+                                                </div>
+                                                <div style={{ color: '#94a3b8', fontFamily: 'monospace', fontSize: '11px' }}>
+                                                    ({point[0].toFixed(4)}, {point[1].toFixed(4)})
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                             </div>
 
                             <div style={{ fontSize: '11px', color: '#64748b' }}>

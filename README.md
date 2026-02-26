@@ -1,4 +1,4 @@
-# 🚛 BYUFUEL — Real-time Fleet Monitoring & Dynamic Route Optimization
+# 🚛 GREEN LANTERN — Real-time Fleet Monitoring & Dynamic Route Optimization
 
 > A complete prototype for real-time fleet monitoring with GPS tracking, load sensors, emission analytics, driving behavior detection, and dynamic route optimization.
 
@@ -21,7 +21,7 @@
 ### One command to run everything:
 
 ```bash
-cd byufuel
+cd greenlantern
 docker compose up --build
 ```
 
@@ -65,7 +65,7 @@ docker compose up --build
 ## 📂 Project Structure
 
 ```
-byufuel/
+greenlantern/
 ├── docker-compose.yml          # Full orchestration
 ├── .env                        # Environment variables
 ├── README.md                   # This file
@@ -136,18 +136,18 @@ byufuel/
 
 ```bash
 # List all topics
-docker exec byufuel-kafka-1 kafka-topics --list --bootstrap-server localhost:9092
+docker exec greenlantern-kafka-1 kafka-topics --list --bootstrap-server localhost:9092
 
 # Watch GPS events
-docker exec byufuel-kafka-1 kafka-console-consumer \
+docker exec greenlantern-kafka-1 kafka-console-consumer \
   --topic gps.events --bootstrap-server localhost:9092 --from-beginning --max-messages 10
 
 # Watch alerts
-docker exec byufuel-kafka-1 kafka-console-consumer \
+docker exec greenlantern-kafka-1 kafka-console-consumer \
   --topic alerts.route_deviation --bootstrap-server localhost:9092
 
 # Watch emissions
-docker exec byufuel-kafka-1 kafka-console-consumer \
+docker exec greenlantern-kafka-1 kafka-console-consumer \
   --topic emissions.metrics --bootstrap-server localhost:9092
 ```
 
@@ -169,7 +169,7 @@ docker exec byufuel-kafka-1 kafka-console-consumer \
 ### Access PostgreSQL
 
 ```bash
-docker exec -it byufuel-postgres-1 psql -U byufuel -d byufuel
+docker exec -it greenlantern-postgres-1 psql -U greenlantern -d greenlantern
 ```
 
 ---

@@ -1,5 +1,5 @@
 """
-BYUFUEL Backend API (FastAPI)
+GREEN LANTERN Backend API (FastAPI)
 ==============================
 REST endpoints + WebSocket for live updates.
 """
@@ -19,7 +19,7 @@ import psycopg2.extras
 import redis
 from kafka import KafkaConsumer, KafkaProducer
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://byufuel:byufuel123@postgres:5432/byufuel")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://greenlantern:greenlantern123@postgres:5432/greenlantern")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 KAFKA = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 
@@ -150,7 +150,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="BYUFUEL API",
+    title="GREEN LANTERN API",
     description="Real-time Fleet Monitoring + Dynamic Route Optimization",
     version="1.0.0",
     lifespan=lifespan,
@@ -168,7 +168,7 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "byufuel-api"}
+    return {"status": "ok", "service": "greenlantern-api"}
 
 
 # ─── REST Endpoints ──────────────────────────────────────
