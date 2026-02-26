@@ -402,13 +402,14 @@ def get_vehicle_capacity(vehicle_id: str) -> float:
 
 
 # ── Constant UDFs (for string literals in Pathway tables) ──
+# Pathway UDFs require at least one argument, so we pass vehicle_id as dummy
 
 @pw.udf
-def const_route_deviation() -> str:
+def const_route_deviation(vehicle_id: str) -> str:
     return "route_deviation"
 
 @pw.udf
-def const_abnormal_driving() -> str:
+def const_abnormal_driving(vehicle_id: str) -> str:
     return "abnormal_driving"
 
 
@@ -624,16 +625,16 @@ def main():
     deviation_output = deviation_alerts.select(
         vehicle_id=deviation_alerts.vehicle_id,
         alert_json=to_alert_json(
-            deviation_alerts.vehicle_id, const_route_deviation(),
+            deviation_alerts.vehicle_id, const_route_deviation(deviation_alerts.vehicle_id),
             deviation_alerts.lat, deviation_alerts.lng,
             deviation_alerts.speed, deviation_alerts.deviation,
             deviation_alerts.timestamp,
         ),
         _saved=persist_alert(
             deviation_alerts.vehicle_id,
-            const_route_deviation(),
+            const_route_deviation(deviation_alerts.vehicle_id),
             to_alert_json(
-                deviation_alerts.vehicle_id, const_route_deviation(),
+                deviation_alerts.vehicle_id, const_route_deviation(deviation_alerts.vehicle_id),
                 deviation_alerts.lat, deviation_alerts.lng,
                 deviation_alerts.speed, deviation_alerts.deviation,
                 deviation_alerts.timestamp,
@@ -697,7 +698,7 @@ def main():
         ),
         _saved=persist_alert(
             abnormal.vehicle_id,
-            const_abnormal_driving(),
+            const_abnormal_driving(abnormal.vehicle_id),
             to_behavior_json(
                 abnormal.vehicle_id, abnormal.dtw_score,
                 abnormal.speed_stats, abnormal.timestamp,
