@@ -3,15 +3,23 @@ import LiveMap from './components/LiveMap'
 import VehiclesTable from './components/VehiclesTable'
 import AlertsPanel from './components/AlertsPanel'
 import RoutesView from './components/RoutesView'
+import { mockVehicles, mockWarehouses, mockRestaurants, mockRoutes, mockAlerts, mockEmissions } from './mockData'
 import './App.css'
 
-const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8000'
-    : `http://${window.location.hostname}:8000`
+// Check if we're on Vercel (no backend available)
+const IS_VERCEL = window.location.hostname.includes('vercel.app')
 
-const WS_URL = window.location.hostname === 'localhost'
-    ? 'ws://localhost:8000/ws/live'
-    : `ws://${window.location.hostname}:8000/ws/live`
+const API_URL = IS_VERCEL 
+    ? null  // No backend on Vercel
+    : (window.location.hostname === 'localhost'
+        ? 'http://localhost:8000'
+        : `http://${window.location.hostname}:8000`)
+
+const WS_URL = IS_VERCEL
+    ? null  // No WebSocket on Vercel
+    : (window.location.hostname === 'localhost'
+        ? 'ws://localhost:8000/ws/live'
+        : `ws://${window.location.hostname}:8000/ws/live`)
 
 // ── SVG Icon Components ─────────────────────────────
 const Icon = {
@@ -108,6 +116,24 @@ function App() {
 
     // ── Fetch initial data ──────────────────────────
     const fetchData = useCallback(async () => {
+        // Use mock data on Vercel (no backend)
+        if (IS_VERCEL) {
+            setVehicles(mockVehicles)
+            setAlerts(mockAlerts)
+            setEmissions(mockEmissions.map(e => ({
+                ...e,
+                co2_est: parseFloat(e.co2_est) || 0,
+                fuel_est: parseFloat(e.fuel_est) || 0,
+                load_kg: parseFloat(e.load_kg) || 0,
+                speed: parseFloat(e.speed) || 0,
+            })))
+            setRoutes(mockRoutes)
+            setWarehouses(mockWarehouses)
+            setRestaurants(mockRestaurants)
+            return
+        }
+
+        // Fetch from backend when available
         try {
             const [vRes, aRes, eRes, rRes, wRes, restRes] = await Promise.all([
                 fetch(`${API_URL}/api/vehicles`).then(r => r.json()).catch(() => ({ vehicles: [] })),
@@ -142,6 +168,12 @@ function App() {
 
     // ── WebSocket ───────────────────────────────────
     const connectWs = useCallback(() => {
+        // Skip WebSocket on Vercel (no backend)
+        if (IS_VERCEL) {
+            setWsConnected(false)
+            return
+        }
+
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return
         try {
             const ws = new WebSocket(WS_URL)
@@ -220,6 +252,12 @@ function App() {
     }, [connectWs])
 
     const handleOptimize = async () => {
+        // Skip API call on Vercel
+        if (IS_VERCEL) {
+            console.log('Optimize routes (mock mode - no backend)')
+            return
+        }
+
         try {
             await fetch(`${API_URL}/api/optimize`, { method: 'POST' })
         } catch (err) { console.error('Optimize error:', err) }
