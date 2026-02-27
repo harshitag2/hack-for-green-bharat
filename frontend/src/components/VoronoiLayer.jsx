@@ -1,20 +1,39 @@
-import React, { useEffect, useState } from 'react'
-import { Polygon, Tooltip, useMap } from 'react-leaflet'
+import { useEffect, useState } from 'react'
+import { Polygon, Tooltip, useMap, GeoJSON } from 'react-leaflet'
 import { Delaunay } from 'd3-delaunay'
+import polygonClipping from 'polygon-clipping'
 
 function VoronoiLayer({ warehouses, restaurants }) {
     const [voronoiCells, setVoronoiCells] = useState([])
+    const [delhiBoundary, setDelhiBoundary] = useState(null)
     const map = useMap()
 
+    // Load Delhi GeoJSON if available
     useEffect(() => {
-        if (!warehouses || warehouses.length === 0) return
+        fetch('/delhi_boundary.geojson')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data) {
+                    console.log('Loaded Delhi boundary GeoJSON')
+                    setDelhiBoundary(data)
+                }
+            })
+            .catch((error) => {
+                console.error('Failed to load Delhi boundary', error)
+            })
+    }, [])
 
-        // Get map bounds
-        const bounds = map.getBounds()
-        const north = bounds.getNorth()
-        const south = bounds.getSouth()
-        const east = bounds.getEast()
-        const west = bounds.getWest()
+    useEffect(() => {
+        if (!warehouses || warehouses.length === 0 || !delhiBoundary) return
+
+        // Get Delhi boundary coordinates
+        const boundaryCoords = delhiBoundary.features[0].geometry.coordinates[0]
+        const lngs = boundaryCoords.map(c => c[0])
+        const lats = boundaryCoords.map(c => c[1])
+        const west = Math.min(...lngs)
+        const east = Math.max(...lngs)
+        const south = Math.min(...lats)
+        const north = Math.max(...lats)
 
         // Prepare warehouse points
         const points = warehouses.map(w => [w.lng, w.lat])
@@ -27,13 +46,33 @@ function VoronoiLayer({ warehouses, restaurants }) {
         // Create Voronoi diagram with bounds
         const voronoi = delaunay.voronoi([west, south, east, north])
 
+        // Delhi boundary polygon for clipping (in [lng, lat] format)
+        const delhiPolygon = [boundaryCoords]
+
         // Generate cells with warehouse info
         const cells = warehouses.map((warehouse, i) => {
             const cell = voronoi.cellPolygon(i)
             if (!cell) return null
 
+            // Clip Voronoi cell to Delhi boundary
+            const voronoiPolygon = [cell]
+            let clippedPolygon
+            
+            try {
+                // Perform polygon intersection
+                const intersection = polygonClipping.intersection(voronoiPolygon, delhiPolygon)
+                
+                if (!intersection || intersection.length === 0) return null
+                
+                // Get the first polygon from intersection result
+                clippedPolygon = intersection[0][0]
+            } catch (error) {
+                console.warn('Polygon clipping failed for warehouse', warehouse.id, error)
+                clippedPolygon = cell // Fallback to unclipped
+            }
+
             // Convert to lat/lng format for Leaflet
-            const positions = cell.map(([lng, lat]) => [lat, lng])
+            const positions = clippedPolygon.map(([lng, lat]) => [lat, lng])
 
             // Find restaurants in this cell
             const restaurantsInCell = restaurants.filter(restaurant => {
@@ -76,7 +115,7 @@ function VoronoiLayer({ warehouses, restaurants }) {
         }).filter(Boolean)
 
         setVoronoiCells(cells)
-    }, [warehouses, restaurants, map])
+    }, [warehouses, restaurants, map, delhiBoundary])
 
     // Color palette for different warehouses
     const colors = [
@@ -97,6 +136,20 @@ function VoronoiLayer({ warehouses, restaurants }) {
 
     return (
         <>
+            {/* Delhi Boundary Overlay - Only show if loaded */}
+            {delhiBoundary && (
+                <GeoJSON
+                    data={delhiBoundary}
+                    style={{
+                        fillColor: 'transparent',
+                        color: '#1e293b',
+                        weight: 3,
+                        opacity: 0.8,
+                        dashArray: '10, 5'
+                    }}
+                />
+            )}
+
             {voronoiCells.map((cell, idx) => (
                 <Polygon
                     key={cell.id}

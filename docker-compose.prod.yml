@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-greenlantern}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-greenlantern123}
+      POSTGRES_DB: ${POSTGRES_DB:-greenlantern}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+    networks:
+      - greenlantern-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U greenlantern"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - greenlantern-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-greenlantern}:${POSTGRES_PASSWORD:-greenlantern123}@postgres:5432/${POSTGRES_DB:-greenlantern}
+      REDIS_URL: redis://redis:6379
+      PORT: 8000
+      CORS_ORIGINS: "*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - greenlantern-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - greenlantern-network
+    restart: always
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  greenlantern-network:
+    driver: bridge
