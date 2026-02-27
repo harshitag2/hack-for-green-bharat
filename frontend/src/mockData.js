@@ -1,5 +1,16 @@
 // Mock data for Vercel deployment (no backend needed)
 
+// Helper function to generate random movement
+const randomMove = (value, delta = 0.001) => {
+    return value + (Math.random() - 0.5) * delta
+}
+
+// Helper function to generate random speed
+const randomSpeed = (current, min = 0, max = 60) => {
+    const change = (Math.random() - 0.5) * 10
+    return Math.max(min, Math.min(max, current + change))
+}
+
 export const mockVehicles = [
     {
         id: "V001",
@@ -205,3 +216,91 @@ export const mockEmissions = [
         created_at: new Date().toISOString()
     }
 ];
+
+
+// Function to simulate live vehicle updates
+export const simulateVehicleUpdate = (vehicles) => {
+    return vehicles.map(vehicle => {
+        // Randomly update position (simulate movement)
+        const newLat = randomMove(vehicle.lat, 0.002)
+        const newLng = randomMove(vehicle.lng, 0.002)
+        
+        // Randomly update speed
+        const newSpeed = randomSpeed(vehicle.speed, 0, 65)
+        
+        // Randomly update load (simulate pickups/dropoffs)
+        let newLoad = vehicle.load_kg
+        if (Math.random() > 0.95) { // 5% chance of load change
+            newLoad = Math.max(0, Math.min(vehicle.capacity_kg, newLoad + (Math.random() - 0.5) * 50))
+        }
+        
+        const newCapacityPct = (newLoad / vehicle.capacity_kg) * 100
+        
+        return {
+            ...vehicle,
+            lat: newLat,
+            lng: newLng,
+            speed: parseFloat(newSpeed.toFixed(1)),
+            load_kg: parseFloat(newLoad.toFixed(1)),
+            capacity_pct: parseFloat(newCapacityPct.toFixed(1)),
+            updated_at: new Date().toISOString()
+        }
+    })
+}
+
+// Function to generate new emission data
+export const generateEmissionData = (vehicles) => {
+    return vehicles.map(vehicle => ({
+        id: Date.now() + Math.random(),
+        vehicle_id: vehicle.id,
+        co2_est: parseFloat((vehicle.speed * 0.05 + Math.random() * 0.5).toFixed(3)),
+        fuel_est: parseFloat((vehicle.speed * 0.025 + Math.random() * 0.3).toFixed(3)),
+        load_kg: vehicle.load_kg,
+        speed: vehicle.speed,
+        created_at: new Date().toISOString()
+    }))
+}
+
+// Function to randomly generate alerts
+export const generateRandomAlert = (vehicles) => {
+    if (Math.random() > 0.9) { // 10% chance per update
+        const vehicle = vehicles[Math.floor(Math.random() * vehicles.length)]
+        const alertTypes = [
+            { type: 'overspeed', payload: { speed: 85, limit: 80 } },
+            { type: 'route_deviation', payload: { deviation_km: 2.5 } },
+            { type: 'harsh_braking', payload: { deceleration: -8.5 } },
+            { type: 'idle_time', payload: { idle_minutes: 15 } }
+        ]
+        const alert = alertTypes[Math.floor(Math.random() * alertTypes.length)]
+        
+        return {
+            id: Date.now() + Math.random(),
+            vehicle_id: vehicle.id,
+            type: alert.type,
+            payload_json: JSON.stringify(alert.payload),
+            created_at: new Date().toISOString()
+        }
+    }
+    return null
+}
+
+// Function to update routes based on vehicle positions
+export const updateRoutes = (vehicles, warehouses, restaurants) => {
+    return vehicles.slice(0, 3).map(vehicle => {
+        // Create a route from current position through some restaurants back to warehouse
+        const nearbyRestaurants = restaurants.slice(0, 2)
+        const warehouse = warehouses[0]
+        
+        const polyline = [
+            [vehicle.lat, vehicle.lng],
+            ...nearbyRestaurants.map(r => [r.lat, r.lng]),
+            [warehouse.lat, warehouse.lng]
+        ]
+        
+        return {
+            vehicle_id: vehicle.id,
+            polyline,
+            updated_at: new Date().toISOString()
+        }
+    })
+}

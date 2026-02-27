@@ -3,7 +3,18 @@ import LiveMap from './components/LiveMap'
 import VehiclesTable from './components/VehiclesTable'
 import AlertsPanel from './components/AlertsPanel'
 import RoutesView from './components/RoutesView'
-import { mockVehicles, mockWarehouses, mockRestaurants, mockRoutes, mockAlerts, mockEmissions } from './mockData'
+import { 
+    mockVehicles, 
+    mockWarehouses, 
+    mockRestaurants, 
+    mockRoutes, 
+    mockAlerts, 
+    mockEmissions,
+    simulateVehicleUpdate,
+    generateEmissionData,
+    generateRandomAlert,
+    updateRoutes
+} from './mockData'
 import './App.css'
 
 // Check if we're on Vercel (no backend available)
@@ -162,9 +173,36 @@ function App() {
 
     useEffect(() => {
         fetchData()
+        
+        // For Vercel: simulate live updates
+        if (IS_VERCEL) {
+            const simulationInterval = setInterval(() => {
+                // Update vehicle positions and stats
+                setVehicles(prev => simulateVehicleUpdate(prev))
+                
+                // Generate new emission data
+                setEmissions(prev => {
+                    const newEmissions = generateEmissionData(vehicles)
+                    return [...newEmissions, ...prev].slice(0, 200)
+                })
+                
+                // Randomly generate alerts
+                const newAlert = generateRandomAlert(vehicles)
+                if (newAlert) {
+                    setAlerts(prev => [newAlert, ...prev].slice(0, 100))
+                }
+                
+                // Update routes
+                setRoutes(updateRoutes(vehicles, warehouses, restaurants))
+            }, 2000) // Update every 2 seconds
+            
+            return () => clearInterval(simulationInterval)
+        }
+        
+        // For backend: regular polling
         const interval = setInterval(fetchData, 10000)
         return () => clearInterval(interval)
-    }, [fetchData])
+    }, [fetchData, vehicles, warehouses, restaurants])
 
     // ── WebSocket ───────────────────────────────────
     const connectWs = useCallback(() => {
@@ -295,9 +333,9 @@ function App() {
                     </div>
                 </div>
                 <div className="header-actions">
-                    <div className={`status-badge ${wsConnected ? '' : 'disconnected'}`}>
+                    <div className={`status-badge ${wsConnected || IS_VERCEL ? '' : 'disconnected'}`}>
                         <span className="dot" />
-                        {wsConnected ? 'Connected' : 'Connecting'}
+                        {IS_VERCEL ? 'Live Simulation' : (wsConnected ? 'Connected' : 'Connecting')}
                     </div>
                     <button className="btn-optimize" onClick={handleOptimize}>
                         <Icon.Zap />
