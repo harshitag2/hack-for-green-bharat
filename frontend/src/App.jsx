@@ -174,35 +174,54 @@ function App() {
     useEffect(() => {
         fetchData()
         
-        // For Vercel: simulate live updates
-        if (IS_VERCEL) {
-            const simulationInterval = setInterval(() => {
-                // Update vehicle positions and stats
-                setVehicles(prev => simulateVehicleUpdate(prev))
+        // For backend: regular polling
+        if (!IS_VERCEL) {
+            const interval = setInterval(fetchData, 10000)
+            return () => clearInterval(interval)
+        }
+    }, [fetchData])
+
+    // Separate effect for Vercel simulation to avoid stale closures
+    useEffect(() => {
+        if (!IS_VERCEL) return
+
+        const simulationInterval = setInterval(() => {
+            // Update vehicle positions and stats using callback to get latest state
+            setVehicles(prev => {
+                const updated = simulateVehicleUpdate(prev)
                 
-                // Generate new emission data
-                setEmissions(prev => {
-                    const newEmissions = generateEmissionData(vehicles)
-                    return [...newEmissions, ...prev].slice(0, 200)
+                // Generate new emission data based on updated vehicles
+                setEmissions(prevEmissions => {
+                    const newEmissions = generateEmissionData(updated)
+                    return [...newEmissions, ...prevEmissions].slice(0, 200)
                 })
                 
-                // Randomly generate alerts
-                const newAlert = generateRandomAlert(vehicles)
+                // Randomly generate alerts based on updated vehicles
+                const newAlert = generateRandomAlert(updated)
                 if (newAlert) {
-                    setAlerts(prev => [newAlert, ...prev].slice(0, 100))
+                    setAlerts(prevAlerts => [newAlert, ...prevAlerts].slice(0, 100))
                 }
                 
-                // Update routes
-                setRoutes(updateRoutes(vehicles, warehouses, restaurants))
-            }, 2000) // Update every 2 seconds
+                return updated
+            })
             
-            return () => clearInterval(simulationInterval)
-        }
+            // Update routes
+            setRoutes(prev => {
+                // Get current state via callback
+                let currentVehicles = []
+                let currentWarehouses = []
+                let currentRestaurants = []
+                
+                setVehicles(v => { currentVehicles = v; return v })
+                setWarehouses(w => { currentWarehouses = w; return w })
+                setRestaurants(r => { currentRestaurants = r; return r })
+                
+                return updateRoutes(currentVehicles, currentWarehouses, currentRestaurants)
+            })
+        }, 1000) // Update every 1 second like localhost
         
-        // For backend: regular polling
-        const interval = setInterval(fetchData, 10000)
-        return () => clearInterval(interval)
-    }, [fetchData, vehicles, warehouses, restaurants])
+        return () => clearInterval(simulationInterval)
+    }, []) // Empty deps - runs once on mount for Vercel
 
     // ── WebSocket ───────────────────────────────────
     const connectWs = useCallback(() => {
