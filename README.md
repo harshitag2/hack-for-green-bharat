@@ -6,6 +6,12 @@
 ![Python](https://img.shields.io/badge/Python-3.11-green)
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue)
 
+## 🌐 Live Demo
+
+**🚀 [View Live Application](https://hack-for-green-bharat-ruby.vercel.app/)**
+
+The live demo runs with simulated real-time data, updating every second to showcase the Kafka/Pathway pipeline functionality.
+
 ---
 
 ## 📋 Prerequisites
