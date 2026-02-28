@@ -1,14 +1,57 @@
 import React from 'react'
 
-function SpeedBadge({ speed }) {
-    let cls = 'normal', label = 'Normal'
-    if (speed < 2) { cls = 'idling'; label = 'Idling' }
-    else if (speed > 80) { cls = 'overspeed'; label = 'Overspeed' }
-    else if (speed > 60) { cls = 'fast'; label = 'Highway' }
+// Helper function to calculate distance between two points (in km)
+function getDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371 // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLng = (lng2 - lng1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+}
+
+// Determine vehicle status based on location and speed
+function getVehicleStatus(vehicle, warehouses = [], restaurants = []) {
+    const speed = vehicle.speed || 0
+    
+    // Check if vehicle is near a warehouse (within 0.5 km)
+    for (const warehouse of warehouses) {
+        const dist = getDistance(vehicle.lat, vehicle.lng, warehouse.lat, warehouse.lng)
+        if (dist < 0.5) {
+            return { label: 'At Warehouse', cls: 'warehouse' }
+        }
+    }
+    
+    // Check if vehicle is near a restaurant (within 0.5 km)
+    for (const restaurant of restaurants) {
+        const dist = getDistance(vehicle.lat, vehicle.lng, restaurant.lat, restaurant.lng)
+        if (dist < 0.5) {
+            return { label: 'At Restaurant', cls: 'restaurant' }
+        }
+    }
+    
+    // If moving, it's in transit
+    if (speed > 5) {
+        return { label: 'In Transit', cls: 'transit' }
+    }
+    
+    // If stopped but not at a location
+    if (speed < 2) {
+        return { label: 'Idling', cls: 'idling' }
+    }
+    
+    // Default
+    return { label: 'In Transit', cls: 'transit' }
+}
+
+function StatusBadge({ vehicle, warehouses, restaurants }) {
+    const status = getVehicleStatus(vehicle, warehouses, restaurants)
     return (
-        <span className={`status-pill ${cls}`}>
+        <span className={`status-pill ${status.cls}`}>
             <span className="status-dot" />
-            {label}
+            {status.label}
         </span>
     )
 }
@@ -26,7 +69,7 @@ function CapacityBar({ pct = 0 }) {
     )
 }
 
-export default function VehiclesTable({ vehicles = [] }) {
+export default function VehiclesTable({ vehicles = [], warehouses = [], restaurants = [] }) {
     if (vehicles.length === 0) {
         return (
             <div className="vehicles-container">
@@ -104,7 +147,7 @@ export default function VehiclesTable({ vehicles = [] }) {
                             {vehicles.map((v) => (
                                 <tr key={v.id}>
                                     <td><span className="vehicle-id">{v.id}</span></td>
-                                    <td><SpeedBadge speed={v.speed || 0} /></td>
+                                    <td><StatusBadge vehicle={v} warehouses={warehouses} restaurants={restaurants} /></td>
                                     <td>
                                         <div className="speed-cell">
                                             <span className="speed-value">{(v.speed || 0).toFixed(1)}</span>

@@ -435,7 +435,7 @@ function App() {
                 )}
 
                 {activeTab === 'vehicles' && (
-                    <VehiclesTable vehicles={vehicles} />
+                    <VehiclesTable vehicles={vehicles} warehouses={warehouses} restaurants={restaurants} />
                 )}
 
                 {activeTab === 'alerts' && (
