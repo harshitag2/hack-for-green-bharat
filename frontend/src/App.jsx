@@ -319,12 +319,12 @@ function App() {
         ? Math.round(vehicles.reduce((s, v) => s + (v.capacity_pct || 0), 0) / vehicles.length) : 0
 
     const tabs = [
-        { key: 'map', label: 'Live Map', icon: Icon.Map },
-        { key: 'vehicles', label: 'Vehicles', icon: Icon.Truck },
+        { key: 'map', label: 'Dashboard', icon: Icon.Map },
+        { key: 'vehicles', label: 'Fleet Details', icon: Icon.Truck },
         { key: 'alerts', label: `Alerts (${totalAlerts})`, icon: Icon.Bell },
         { key: 'routes', label: 'Routes', icon: Icon.Route },
         { key: 'emissions', label: 'Emissions', icon: Icon.Leaf },
-        { key: 'config', label: 'Configuration', icon: Icon.Database },
+        { key: 'config', label: 'Settings', icon: Icon.Database },
     ]
 
     return (
@@ -405,7 +405,7 @@ function App() {
                     <div className="dashboard-grid">
                         <div className="card">
                             <div className="card-header">
-                                <h3><Icon.Signal /> Live Fleet Map</h3>
+                                <h3><Icon.Signal /> Fleet Dashboard</h3>
                                 <span className="card-badge">{vehicles.length} vehicles</span>
                             </div>
                             <div className="map-container">
@@ -743,13 +743,81 @@ function App() {
                         <div className="config-section" style={{ marginTop: '20px' }}>
                             <div className="card">
                                 <div className="card-header">
-                                    <h3><Icon.Activity /> Time Windows</h3>
-                                    <span className="card-badge">Not in use</span>
+                                    <h3><Icon.Database /> Warehouse Configuration</h3>
+                                    <span className="card-badge">Editable</span>
                                 </div>
                                 <div className="card-body">
-                                    <p style={{ fontSize: '13px', color: 'var(--gray-600)' }}>
-                                        Time window configuration is available but not currently being used in route optimization.
+                                    <p style={{ fontSize: '13px', color: 'var(--gray-600)', marginBottom: '20px' }}>
+                                        Configure warehouse locations and their service areas.
                                     </p>
+                                    
+                                    <div className="config-grid">
+                                        {warehouses.map((warehouse) => (
+                                            <div key={warehouse.id} className="config-card">
+                                                <div className="config-card-header">
+                                                    <span className="restaurant-icon">🏭</span>
+                                                    <div>
+                                                        <div className="config-card-title">{warehouse.name}</div>
+                                                        <div className="config-card-id">{warehouse.id}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="config-form">
+                                                    <div className="form-group">
+                                                        <label>Warehouse Name</label>
+                                                        <input 
+                                                            type="text" 
+                                                            defaultValue={warehouse.name}
+                                                            className="form-input"
+                                                            placeholder="Central Warehouse"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="form-group">
+                                                        <label>Location (Latitude)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.0001"
+                                                            defaultValue={warehouse.lat}
+                                                            className="form-input"
+                                                            placeholder="28.6300"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="form-group">
+                                                        <label>Location (Longitude)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="0.0001"
+                                                            defaultValue={warehouse.lng}
+                                                            className="form-input"
+                                                            placeholder="77.2200"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="form-group">
+                                                        <label>Address</label>
+                                                        <input 
+                                                            type="text" 
+                                                            defaultValue={warehouse.address || warehouse.state}
+                                                            className="form-input"
+                                                            placeholder="Delhi"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                                        <button className="btn-primary">
+                                            <Icon.Zap />
+                                            Save Configuration
+                                        </button>
+                                        <button className="btn-secondary">
+                                            Add Warehouse
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
