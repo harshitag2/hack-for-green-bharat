@@ -331,23 +331,79 @@ export const generateRandomAlert = (vehicles) => {
     return null
 }
 
-// Function to update routes based on vehicle positions
+// Function to update routes based on warehouse-restaurant assignments (Voronoi regions)
 export const updateRoutes = (vehicles, warehouses, restaurants) => {
-    return vehicles.map(vehicle => {
-        // Create a route from current position through some restaurants back to warehouse
-        const nearbyRestaurants = restaurants.slice(0, 2)
-        const warehouse = warehouses[0]
+    if (!warehouses || warehouses.length === 0 || !restaurants || restaurants.length === 0) {
+        return []
+    }
+    
+    // Helper function to calculate distance
+    const getDistance = (lat1, lng1, lat2, lng2) => {
+        const R = 6371 // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180
+        const dLng = (lng2 - lng1) * Math.PI / 180
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLng / 2) * Math.sin(dLng / 2)
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
+    }
+    
+    // Assign each restaurant to its nearest warehouse (Voronoi assignment)
+    const warehouseAssignments = {}
+    warehouses.forEach(wh => {
+        warehouseAssignments[wh.id] = []
+    })
+    
+    restaurants.forEach(restaurant => {
+        let minDist = Infinity
+        let closestWarehouse = warehouses[0]
         
-        const polyline = [
-            [vehicle.lat, vehicle.lng],
-            ...nearbyRestaurants.map(r => [r.lat, r.lng]),
-            [warehouse.lat, warehouse.lng]
-        ]
+        warehouses.forEach(warehouse => {
+            const dist = getDistance(restaurant.lat, restaurant.lng, warehouse.lat, warehouse.lng)
+            if (dist < minDist) {
+                minDist = dist
+                closestWarehouse = warehouse
+            }
+        })
         
-        return {
-            vehicle_id: vehicle.id,
-            polyline,
-            updated_at: new Date().toISOString()
+        warehouseAssignments[closestWarehouse.id].push(restaurant)
+    })
+    
+    // Create routes for each vehicle based on warehouse assignments
+    const routes = []
+    
+    vehicles.forEach((vehicle, idx) => {
+        // Assign vehicle to a warehouse (round-robin)
+        const warehouseIdx = idx % warehouses.length
+        const warehouse = warehouses[warehouseIdx]
+        const assignedRestaurants = warehouseAssignments[warehouse.id] || []
+        
+        if (assignedRestaurants.length === 0) {
+            // If no restaurants assigned, just show warehouse location
+            routes.push({
+                vehicle_id: vehicle.id,
+                polyline: [
+                    [warehouse.lat, warehouse.lng],
+                    [vehicle.lat, vehicle.lng]
+                ],
+                updated_at: new Date().toISOString()
+            })
+        } else {
+            // Create route: warehouse -> restaurants -> back to warehouse
+            const polyline = [
+                [warehouse.lat, warehouse.lng],
+                ...assignedRestaurants.map(r => [r.lat, r.lng]),
+                [warehouse.lat, warehouse.lng]
+            ]
+            
+            routes.push({
+                vehicle_id: vehicle.id,
+                polyline,
+                updated_at: new Date().toISOString()
+            })
         }
     })
+    
+    return routes
 }
