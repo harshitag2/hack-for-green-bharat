@@ -1,5 +1,5 @@
-import React from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip } from 'react-leaflet'
+import React, { useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import VoronoiLayer from './VoronoiLayer'
 
@@ -7,6 +7,22 @@ const ROUTE_COLORS = {
     V001: '#3b82f6',
     V002: '#10b981',
     V003: '#f59e0b',
+}
+
+// Component to auto-center map on selected route
+function MapCenterController({ route }) {
+    const map = useMap()
+    
+    useEffect(() => {
+        if (route && route.polyline && route.polyline.length > 0) {
+            // Create bounds from all points in the route
+            const bounds = L.latLngBounds(route.polyline.map(p => [p[0], p[1]]))
+            // Fit map to show entire route with padding
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 })
+        }
+    }, [route, map])
+    
+    return null
 }
 
 function vehicleIcon(vid) {
@@ -79,21 +95,27 @@ function RoutesView({ vehicles, routes, warehouses, restaurants, selectedVehicle
                             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                         />
 
+                        {/* Auto-center map on selected route */}
+                        <MapCenterController route={selectedRoute} />
+
                         {/* Voronoi diagram for warehouse service areas */}
                         <VoronoiLayer warehouses={warehouses} restaurants={restaurants} />
 
                         {/* Route polylines */}
                         {routes
                             .filter(r => !selectedVehicle || r.vehicle_id === selectedVehicle)
-                            .map(route => (
-                                <Polyline
-                                    key={route.vehicle_id}
-                                    positions={route.polyline.map(p => [p[0], p[1]])}
-                                    color={ROUTE_COLORS[route.vehicle_id] || '#3b82f6'}
-                                    weight={4}
-                                    opacity={0.9}
-                                />
-                            ))}
+                            .map(route => {
+                                const isSelected = route.vehicle_id === selectedVehicle
+                                return (
+                                    <Polyline
+                                        key={route.vehicle_id}
+                                        positions={route.polyline.map(p => [p[0], p[1]])}
+                                        color={ROUTE_COLORS[route.vehicle_id] || '#3b82f6'}
+                                        weight={isSelected ? 6 : 4}
+                                        opacity={isSelected ? 1 : 0.7}
+                                    />
+                                )
+                            })}
 
                         {/* Vehicle positions */}
                         {vehicles
