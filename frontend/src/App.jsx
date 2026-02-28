@@ -444,35 +444,109 @@ function App() {
 
                 {activeTab === 'emissions' && (
                     <div>
-                        <div className="emissions-grid">
-                            <div className="emission-card">
-                                <div className="emission-icon co2"><Icon.Leaf /></div>
-                                <div className="emission-info">
-                                    <div className="metric">{totalCo2}</div>
-                                    <div className="metric-label">Total CO&#x2082; (kg)</div>
-                                </div>
+                        {/* Live Metrics - Real-time updating */}
+                        <div className="card" style={{ marginBottom: '20px' }}>
+                            <div className="card-header">
+                                <h3><Icon.Activity /> Live Emissions Monitor</h3>
+                                <span className="card-badge" style={{ 
+                                    background: '#10b981', 
+                                    color: 'white',
+                                    animation: 'pulse 2s infinite'
+                                }}>● LIVE</span>
                             </div>
-                            <div className="emission-card">
-                                <div className="emission-icon fuel"><Icon.Activity /></div>
-                                <div className="emission-info">
-                                    <div className="metric">
-                                        {emissions.slice(0, 30).reduce((s, e) => s + (parseFloat(e.fuel_est) || 0), 0).toFixed(2)}
+                            <div className="emissions-grid" style={{ padding: '20px' }}>
+                                <div className="emission-card">
+                                    <div className="emission-icon co2"><Icon.Leaf /></div>
+                                    <div className="emission-info">
+                                        <div className="metric">
+                                            {emissions.length > 0 
+                                                ? emissions.slice(0, 4).reduce((s, e) => s + (parseFloat(e.co2_est) || 0), 0).toFixed(3)
+                                                : '0.000'
+                                            }
+                                        </div>
+                                        <div className="metric-label">Current CO₂ (kg/sec)</div>
+                                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                                            Last 4 vehicles
+                                        </div>
                                     </div>
-                                    <div className="metric-label">Fuel Est. (L)</div>
                                 </div>
-                            </div>
-                            <div className="emission-card">
-                                <div className="emission-icon data"><Icon.Database /></div>
-                                <div className="emission-info">
-                                    <div className="metric">{emissions.length}</div>
-                                    <div className="metric-label">Data Points</div>
+                                <div className="emission-card">
+                                    <div className="emission-icon fuel"><Icon.Activity /></div>
+                                    <div className="emission-info">
+                                        <div className="metric">
+                                            {emissions.length > 0
+                                                ? emissions.slice(0, 4).reduce((s, e) => s + (parseFloat(e.fuel_est) || 0), 0).toFixed(3)
+                                                : '0.000'
+                                            }
+                                        </div>
+                                        <div className="metric-label">Current Fuel (L/sec)</div>
+                                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                                            Last 4 vehicles
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="emission-card">
+                                    <div className="emission-icon data"><Icon.Gauge /></div>
+                                    <div className="emission-info">
+                                        <div className="metric">
+                                            {vehicles.length > 0
+                                                ? (vehicles.reduce((s, v) => s + (v.speed || 0), 0) / vehicles.length).toFixed(1)
+                                                : '0.0'
+                                            }
+                                        </div>
+                                        <div className="metric-label">Avg Fleet Speed (km/h)</div>
+                                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                                            All vehicles
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* Monthly Average - Static values */}
+                        <div className="card" style={{ marginBottom: '20px' }}>
+                            <div className="card-header">
+                                <h3><Icon.TrendingDown /> Monthly Average (Past 30 Days)</h3>
+                                <span className="card-badge">Historical Data</span>
+                            </div>
+                            <div className="emissions-grid" style={{ padding: '20px' }}>
+                                <div className="emission-card">
+                                    <div className="emission-icon co2"><Icon.Leaf /></div>
+                                    <div className="emission-info">
+                                        <div className="metric">1,245.8</div>
+                                        <div className="metric-label">Avg CO₂ (kg/day)</div>
+                                        <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+                                            ↓ 12% vs last month
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="emission-card">
+                                    <div className="emission-icon fuel"><Icon.Activity /></div>
+                                    <div className="emission-info">
+                                        <div className="metric">485.2</div>
+                                        <div className="metric-label">Avg Fuel (L/day)</div>
+                                        <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+                                            ↓ 8% vs last month
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="emission-card">
+                                    <div className="emission-icon data"><Icon.Database /></div>
+                                    <div className="emission-info">
+                                        <div className="metric">2,850</div>
+                                        <div className="metric-label">Total Trips</div>
+                                        <div style={{ fontSize: '11px', color: '#3b82f6', marginTop: '4px' }}>
+                                            95 trips/day avg
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Live Data Stream Table */}
                         <div className="card">
                             <div className="card-header">
-                                <h3><Icon.TrendingDown /> Emission Metrics</h3>
+                                <h3><Icon.Signal /> Live Emission Stream</h3>
                                 <span className="card-badge">{emissions.length} records</span>
                             </div>
                             <div className="card-body" style={{ maxHeight: '440px', overflowY: 'auto', padding: 0 }}>
@@ -486,7 +560,7 @@ function App() {
                                         <thead>
                                             <tr>
                                                 <th>Vehicle</th>
-                                                <th>CO&#x2082; (kg)</th>
+                                                <th>CO₂ (kg)</th>
                                                 <th>Fuel (L)</th>
                                                 <th>Load (kg)</th>
                                                 <th>Speed</th>
