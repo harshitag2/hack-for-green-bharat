@@ -370,17 +370,20 @@ export const updateRoutes = (vehicles, warehouses, restaurants) => {
         warehouseAssignments[closestWarehouse.id].push(restaurant)
     })
     
-    // Create routes for each vehicle based on warehouse assignments
+    // Track which restaurants have been assigned to avoid duplicates
+    const assignedRestaurants = new Set()
     const routes = []
     
-    vehicles.forEach((vehicle, idx) => {
+    // Create routes for each vehicle
+    vehicles.forEach((vehicle, vehicleIdx) => {
         // Assign vehicle to a warehouse (round-robin)
-        const warehouseIdx = idx % warehouses.length
+        const warehouseIdx = vehicleIdx % warehouses.length
         const warehouse = warehouses[warehouseIdx]
-        const assignedRestaurants = warehouseAssignments[warehouse.id] || []
+        const availableRestaurants = (warehouseAssignments[warehouse.id] || [])
+            .filter(r => !assignedRestaurants.has(r.id))
         
-        if (assignedRestaurants.length === 0) {
-            // If no restaurants assigned, just show warehouse location
+        if (availableRestaurants.length === 0) {
+            // If no restaurants available, just show warehouse to vehicle position
             routes.push({
                 vehicle_id: vehicle.id,
                 polyline: [
@@ -390,10 +393,16 @@ export const updateRoutes = (vehicles, warehouses, restaurants) => {
                 updated_at: new Date().toISOString()
             })
         } else {
+            // Assign 1-2 restaurants per vehicle to avoid overcrowding
+            const restaurantsForThisVehicle = availableRestaurants.slice(0, 2)
+            
+            // Mark these restaurants as assigned
+            restaurantsForThisVehicle.forEach(r => assignedRestaurants.add(r.id))
+            
             // Create route: warehouse -> restaurants -> back to warehouse
             const polyline = [
                 [warehouse.lat, warehouse.lng],
-                ...assignedRestaurants.map(r => [r.lat, r.lng]),
+                ...restaurantsForThisVehicle.map(r => [r.lat, r.lng]),
                 [warehouse.lat, warehouse.lng]
             ]
             
