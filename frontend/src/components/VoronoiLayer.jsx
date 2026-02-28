@@ -1,7 +1,32 @@
 import { useEffect, useState } from 'react'
-import { Polygon, Tooltip, useMap, GeoJSON } from 'react-leaflet'
+import { Polygon, Tooltip, useMap, GeoJSON, Marker, Popup } from 'react-leaflet'
 import { Delaunay } from 'd3-delaunay'
 import polygonClipping from 'polygon-clipping'
+import L from 'leaflet'
+
+// Warehouse icon
+const warehouseIcon = L.divIcon({
+    html: `
+        <div style="
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+            font-size: 20px;
+        ">
+            🏭
+        </div>
+    `,
+    className: 'warehouse-marker',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+})
 
 function VoronoiLayer({ warehouses, restaurants }) {
     const [voronoiCells, setVoronoiCells] = useState([])
@@ -265,6 +290,43 @@ function VoronoiLayer({ warehouses, restaurants }) {
                         </div>
                     </Tooltip>
                 </Polygon>
+            ))}
+
+            {/* Warehouse Markers */}
+            {warehouses.map((warehouse, idx) => (
+                <Marker
+                    key={warehouse.id}
+                    position={[warehouse.lat, warehouse.lng]}
+                    icon={warehouseIcon}
+                    zIndexOffset={1000}
+                >
+                    <Popup>
+                        <div style={{ 
+                            fontFamily: 'Inter, sans-serif',
+                            minWidth: '200px'
+                        }}>
+                            <div style={{ 
+                                fontSize: '14px', 
+                                fontWeight: 700,
+                                color: '#8b5cf6',
+                                marginBottom: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}>
+                                <span style={{ fontSize: '18px' }}>🏭</span>
+                                {warehouse.name}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+                                <div><strong>ID:</strong> {warehouse.id}</div>
+                                <div><strong>Location:</strong> {warehouse.address || warehouse.state}</div>
+                                <div style={{ marginTop: '6px', color: '#8b5cf6', fontWeight: 600 }}>
+                                    Service Zone {idx + 1}
+                                </div>
+                            </div>
+                        </div>
+                    </Popup>
+                </Marker>
             ))}
         </>
     )
