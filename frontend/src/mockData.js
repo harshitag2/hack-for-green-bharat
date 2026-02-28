@@ -167,6 +167,15 @@ export const mockRoutes = [
             [28.6358, 77.2778]
         ],
         updated_at: new Date().toISOString()
+    },
+    {
+        vehicle_id: "V004",
+        polyline: [
+            [28.6415, 77.1214],
+            [28.645, 77.21],
+            [28.6315, 77.2167]
+        ],
+        updated_at: new Date().toISOString()
     }
 ];
 
@@ -286,7 +295,7 @@ export const generateRandomAlert = (vehicles) => {
 
 // Function to update routes based on vehicle positions
 export const updateRoutes = (vehicles, warehouses, restaurants) => {
-    return vehicles.slice(0, 3).map(vehicle => {
+    return vehicles.map(vehicle => {
         // Create a route from current position through some restaurants back to warehouse
         const nearbyRestaurants = restaurants.slice(0, 2)
         const warehouse = warehouses[0]
