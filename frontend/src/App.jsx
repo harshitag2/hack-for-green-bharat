@@ -202,26 +202,15 @@ function App() {
                     setAlerts(prevAlerts => [newAlert, ...prevAlerts].slice(0, 100))
                 }
                 
+                // Update routes based on updated vehicles
+                setRoutes(updateRoutes(updated, warehouses, restaurants))
+                
                 return updated
-            })
-            
-            // Update routes
-            setRoutes(prev => {
-                // Get current state via callback
-                let currentVehicles = []
-                let currentWarehouses = []
-                let currentRestaurants = []
-                
-                setVehicles(v => { currentVehicles = v; return v })
-                setWarehouses(w => { currentWarehouses = w; return w })
-                setRestaurants(r => { currentRestaurants = r; return r })
-                
-                return updateRoutes(currentVehicles, currentWarehouses, currentRestaurants)
             })
         }, 1000) // Update every 1 second like localhost
         
         return () => clearInterval(simulationInterval)
-    }, []) // Empty deps - runs once on mount for Vercel
+    }, [warehouses, restaurants]) // Add dependencies
 
     // ── WebSocket ───────────────────────────────────
     const connectWs = useCallback(() => {

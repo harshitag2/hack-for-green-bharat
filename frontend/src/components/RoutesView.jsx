@@ -50,6 +50,11 @@ function RoutesView({ vehicles, routes, warehouses, restaurants, selectedVehicle
     const center = [28.6139, 77.2190]
 
     const selectedRoute = routes.find(r => r.vehicle_id === selectedVehicle)
+    
+    // Debug logging
+    console.log('RoutesView - routes:', routes)
+    console.log('RoutesView - selectedVehicle:', selectedVehicle)
+    console.log('RoutesView - selectedRoute:', selectedRoute)
 
     // Helper function to find location name from coordinates
     const getLocationName = (lat, lng) => {
