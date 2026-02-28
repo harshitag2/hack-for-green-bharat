@@ -228,14 +228,52 @@ export const mockEmissions = [
 
 
 // Function to simulate live vehicle updates
-export const simulateVehicleUpdate = (vehicles) => {
+export const simulateVehicleUpdate = (vehicles, warehouses = [], restaurants = []) => {
     return vehicles.map(vehicle => {
         // Randomly update position (simulate movement)
         const newLat = randomMove(vehicle.lat, 0.002)
         const newLng = randomMove(vehicle.lng, 0.002)
         
-        // Randomly update speed
-        const newSpeed = randomSpeed(vehicle.speed, 0, 65)
+        // Check if vehicle is near a warehouse or restaurant (within 0.5 km)
+        let isAtLocation = false
+        
+        // Helper function to calculate distance
+        const getDistance = (lat1, lng1, lat2, lng2) => {
+            const R = 6371 // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180
+            const dLng = (lng2 - lng1) * Math.PI / 180
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2)
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+            return R * c
+        }
+        
+        // Check warehouses
+        for (const warehouse of warehouses) {
+            if (getDistance(newLat, newLng, warehouse.lat, warehouse.lng) < 0.5) {
+                isAtLocation = true
+                break
+            }
+        }
+        
+        // Check restaurants if not at warehouse
+        if (!isAtLocation) {
+            for (const restaurant of restaurants) {
+                if (getDistance(newLat, newLng, restaurant.lat, restaurant.lng) < 0.5) {
+                    isAtLocation = true
+                    break
+                }
+            }
+        }
+        
+        // Set speed based on location
+        let newSpeed
+        if (isAtLocation) {
+            newSpeed = 0 // Stopped at warehouse/restaurant for loading/unloading
+        } else {
+            newSpeed = randomSpeed(vehicle.speed, 5, 65) // Moving between locations
+        }
         
         // Randomly update load (simulate pickups/dropoffs)
         let newLoad = vehicle.load_kg

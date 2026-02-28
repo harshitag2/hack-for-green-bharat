@@ -188,7 +188,7 @@ function App() {
         const simulationInterval = setInterval(() => {
             // Update vehicle positions and stats using callback to get latest state
             setVehicles(prev => {
-                const updated = simulateVehicleUpdate(prev)
+                const updated = simulateVehicleUpdate(prev, warehouses, restaurants)
                 
                 // Generate new emission data based on updated vehicles
                 setEmissions(prevEmissions => {
