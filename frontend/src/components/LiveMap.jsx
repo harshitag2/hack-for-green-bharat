@@ -227,6 +227,106 @@ function LiveMap({ vehicles, routes, warehouses, restaurants, selectedVehicle, o
                 </Marker>
             ))}
         </MapContainer>
+
+        {/* Map Legend */}
+        <div style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '20px',
+            background: 'white',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '12px',
+            zIndex: 1000,
+            minWidth: '200px'
+        }}>
+            <div style={{ fontWeight: 700, marginBottom: '8px', color: '#1e293b', fontSize: '13px' }}>
+                Map Legend
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                        width: '24px', 
+                        height: '24px', 
+                        borderRadius: '50%', 
+                        background: '#3b82f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        border: '2px solid white',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                    }}>🚛</div>
+                    <span style={{ color: '#475569' }}>Vehicle (Normal)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                        width: '24px', 
+                        height: '24px', 
+                        borderRadius: '50%', 
+                        background: '#8b5cf6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        border: '2px solid white',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                    }}>⏸️</div>
+                    <span style={{ color: '#475569' }}>Vehicle (Idle)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                        width: '24px', 
+                        height: '24px', 
+                        borderRadius: '50%', 
+                        background: '#10b981',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        border: '2px solid white',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                    }}>🏭</div>
+                    <span style={{ color: '#475569' }}>Warehouse</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                        width: '24px', 
+                        height: '24px', 
+                        borderRadius: '50%', 
+                        background: '#f59e0b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        border: '2px solid white',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                    }}>🍽️</div>
+                    <span style={{ color: '#475569' }}>Restaurant</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
+                    <div style={{ 
+                        width: '24px', 
+                        height: '3px', 
+                        background: 'linear-gradient(90deg, rgba(59,130,246,0.3) 0%, rgba(59,130,246,0.8) 100%)',
+                        borderRadius: '2px'
+                    }}></div>
+                    <span style={{ color: '#475569' }}>Route Path</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                        width: '24px', 
+                        height: '3px', 
+                        background: '#1e293b',
+                        borderRadius: '2px',
+                        border: '1px dashed #1e293b'
+                    }}></div>
+                    <span style={{ color: '#475569' }}>Delhi Boundary</span>
+                </div>
+            </div>
+        </div>
         </div>
     )
 }
