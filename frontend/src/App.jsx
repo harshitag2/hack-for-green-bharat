@@ -667,21 +667,74 @@ function App() {
                             <div className="card">
                                 <div className="card-header">
                                     <h3><Icon.Truck /> Fleet Configuration</h3>
-                                    <span className="card-badge">Already Configured</span>
+                                    <span className="card-badge">Editable</span>
                                 </div>
                                 <div className="card-body">
-                                    <p style={{ fontSize: '13px', color: 'var(--gray-600)', marginBottom: '16px' }}>
-                                        Vehicle mix and capacities are already configured in the system.
+                                    <p style={{ fontSize: '13px', color: 'var(--gray-600)', marginBottom: '20px' }}>
+                                        Configure your fleet vehicles with their specifications and capacities.
                                     </p>
-                                    <div className="fleet-summary">
+                                    
+                                    <div className="config-grid">
                                         {vehicles.map((vehicle) => (
-                                            <div key={vehicle.id} className="fleet-item">
-                                                <span className="vehicle-id">{vehicle.id}</span>
-                                                <span style={{ fontSize: '12px', color: 'var(--gray-600)' }}>
-                                                    {vehicle.type} • {vehicle.capacity_kg}kg • {vehicle.fuel_type}
-                                                </span>
+                                            <div key={vehicle.id} className="config-card">
+                                                <div className="config-card-header">
+                                                    <span className="restaurant-icon">🚛</span>
+                                                    <div>
+                                                        <div className="config-card-title">{vehicle.id}</div>
+                                                        <div className="config-card-id">{vehicle.type}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="config-form">
+                                                    <div className="form-group">
+                                                        <label>Vehicle Type</label>
+                                                        <select 
+                                                            defaultValue={vehicle.type}
+                                                            className="form-input"
+                                                        >
+                                                            <option value="truck">Truck</option>
+                                                            <option value="van">Van</option>
+                                                            <option value="mini-truck">Mini Truck</option>
+                                                            <option value="pickup">Pickup</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div className="form-group">
+                                                        <label>Capacity (kg)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            step="50"
+                                                            defaultValue={vehicle.capacity_kg}
+                                                            className="form-input"
+                                                            placeholder="500"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="form-group">
+                                                        <label>Fuel Type</label>
+                                                        <select 
+                                                            defaultValue={vehicle.fuel_type}
+                                                            className="form-input"
+                                                        >
+                                                            <option value="diesel">Diesel</option>
+                                                            <option value="cng">CNG</option>
+                                                            <option value="electric">Electric</option>
+                                                            <option value="petrol">Petrol</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
+                                    </div>
+                                    
+                                    <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                                        <button className="btn-primary">
+                                            <Icon.Zap />
+                                            Save Fleet Configuration
+                                        </button>
+                                        <button className="btn-secondary">
+                                            Add Vehicle
+                                        </button>
                                     </div>
                                 </div>
                             </div>
